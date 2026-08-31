@@ -7,6 +7,7 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔐</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -20,15 +21,12 @@
         label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9rem; }
         input { width: 100%; padding: 12px 15px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 15px; }
         input:focus { outline: none; border-color: #6366f1; }
-        .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; margin-bottom: 8px; transition: all 0.2s; }
-        .btn:hover { transform: translateY(-2px); }
+        .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; margin-bottom: 8px; }
         .btn-primary { background: #6366f1; color: white; }
         .btn-success { background: #10b981; color: white; }
         .btn-danger { background: #ef4444; color: white; }
-        .btn-warning { background: #f59e0b; color: white; }
         .error { background: #fee2e2; color: #991b1b; padding: 10px; border-radius: 8px; text-align: center; display: none; margin-top: 10px; }
         .success-box { background: #d1fae5; color: #065f46; padding: 15px; border-radius: 10px; text-align: center; }
-        .password-display { background: #fef3c7; padding: 20px; border-radius: 10px; text-align: center; font-size: 1.5rem; font-weight: 800; letter-spacing: 3px; color: #d97706; margin: 15px 0; word-break: break-all; }
         .step { display: none; }
         .step.active { display: block; animation: fadeIn 0.3s; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -36,7 +34,7 @@
         .spinner { width: 50px; height: 50px; border: 4px solid #e2e8f0; border-top: 4px solid #6366f1; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 15px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .tab-buttons { display: flex; gap: 10px; margin-bottom: 20px; }
-        .tab-btn { flex: 1; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; cursor: pointer; font-weight: 600; background: white; }
+        .tab-btn { flex: 1; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; cursor: pointer; font-weight: 600; background: white; font-size: 0.85rem; }
         .tab-btn.active { background: #6366f1; color: white; border-color: #6366f1; }
         #adminPanel { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; overflow-y: auto; }
         .admin-content { background: white; max-width: 600px; margin: 30px auto; padding: 25px; border-radius: 15px; }
@@ -69,10 +67,10 @@
     </div>
 
     <div class="container">
-        <!-- Tab đăng ký / quên mật khẩu -->
+        <!-- Bước 1 -->
         <div class="card step active" id="step1">
             <div class="icon">📧</div>
-            <h1>Đăng Ký / Quên Mật Khẩu</h1>
+            <h1>Tạo Tài Khoản</h1>
             <p class="subtitle">Xác minh email để tiếp tục</p>
             
             <div class="tab-buttons">
@@ -89,6 +87,10 @@
                     <label>📧 Email:</label>
                     <input type="email" id="emailInput" placeholder="example@gmail.com">
                 </div>
+                <div class="form-group">
+                    <label>🔒 Mật khẩu:</label>
+                    <input type="password" id="passwordInput" placeholder="Ít nhất 6 ký tự">
+                </div>
             </div>
             
             <div id="forgotForm" style="display:none;">
@@ -102,7 +104,7 @@
             <div class="error" id="error1"></div>
         </div>
         
-        <!-- Bước chờ Admin -->
+        <!-- Bước 2 -->
         <div class="card step" id="step2">
             <div class="waiting-box">
                 <div class="spinner"></div>
@@ -113,7 +115,7 @@
             </div>
         </div>
         
-        <!-- Bước nhập OTP -->
+        <!-- Bước 3 -->
         <div class="card step" id="step3">
             <div class="icon">🔐</div>
             <h1>Nhập Mã OTP</h1>
@@ -126,18 +128,15 @@
             <div class="error" id="error2"></div>
         </div>
         
-        <!-- Bước hiện mật khẩu -->
+        <!-- Bước 4 -->
         <div class="card step" id="step4">
             <div class="icon">🎉</div>
-            <h1 id="step4Title">Tạo Tài Khoản Thành Công!</h1>
-            <p class="subtitle">Đây là mật khẩu của bạn - Hãy lưu lại!</p>
-            <div class="password-display" id="passwordDisplay"></div>
+            <h1 id="step4Title">Đăng Ký Thành Công!</h1>
             <div class="success-box">
-                <div style="font-weight:700;" id="successName"></div>
+                <div style="font-size:1.2rem;font-weight:700;" id="successName"></div>
                 <div style="font-size:0.85rem;" id="successEmail"></div>
             </div>
-            <button class="btn btn-primary" onclick="copyPassword()">📋 Copy Mật Khẩu</button>
-            <button class="btn btn-warning" onclick="resetForm()" style="margin-top:5px;">🔄 Làm Lại</button>
+            <button class="btn btn-primary" onclick="goToVideoCall()" style="margin-top:15px;">📞 Vào VideoCall</button>
         </div>
     </div>
 
@@ -151,30 +150,20 @@
             appId: "1:109570471366:web:eba0a4147d282d466aaec7"
         };
         firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
         const db = firebase.firestore();
 
         let isAdmin = false;
         const ADMIN_CODE = 'admin@@@';
         let currentEmail = '';
         let currentName = '';
+        let currentPassword = '';
         let currentOTP = '';
-        let currentMode = 'register'; // register hoặc forgot
-        let generatedPassword = '';
-
-        // Tạo mật khẩu random 16 ký tự
-        function generatePassword() {
-            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
-            let password = '';
-            for (let i = 0; i < 16; i++) {
-                password += chars.charAt(Math.floor(Math.random() * chars.length));
-            }
-            return password;
-        }
+        let currentMode = 'register';
 
         function setMode(mode) {
             currentMode = mode;
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            
             if (mode === 'register') {
                 document.getElementById('registerForm').style.display = 'block';
                 document.getElementById('forgotForm').style.display = 'none';
@@ -222,7 +211,6 @@
                         <div>
                             <strong>${user.name || 'N/A'}</strong>
                             <p style="font-size:0.8rem;color:#64748b;">${user.email}</p>
-                            <p style="font-size:0.7rem;color:#94a3b8;">MK: ${user.password ? '✅ Có' : '❌ Chưa'}</p>
                         </div>
                         <button class="btn btn-danger" style="width:auto;padding:8px 12px;" onclick="deleteUser('${doc.id}')">🗑️</button>
                     `;
@@ -258,8 +246,16 @@
 
         async function deleteUser(userId) {
             if (!confirm('Xóa?')) return;
-            await db.collection('users').doc(userId).delete();
-            loadAdminData();
+            try {
+                await db.collection('users').doc(userId).delete();
+                // Xóa cả Firebase Auth
+                const userDoc = await db.collection('users').doc(userId).get();
+                const authUser = await auth.getUser(userId);
+                if (authUser) await authUser.delete();
+                loadAdminData();
+            } catch (error) {
+                alert('Lỗi: ' + error.message);
+            }
         }
 
         async function approveOTP(requestId) {
@@ -275,29 +271,36 @@
         function requestOTP() {
             let name = '';
             let email = '';
+            let password = '';
             
             if (currentMode === 'register') {
                 name = document.getElementById('nameInput').value.trim();
                 email = document.getElementById('emailInput').value.trim();
+                password = document.getElementById('passwordInput').value;
+                
+                if (!name || !email || !password) {
+                    showError('error1', '⚠️ Nhập đầy đủ!');
+                    return;
+                }
+                
+                if (password.length < 6) {
+                    showError('error1', '⚠️ Mật khẩu ít nhất 6 ký tự!');
+                    return;
+                }
             } else {
-                name = 'Quên mật khẩu';
                 email = document.getElementById('forgotEmailInput').value.trim();
-            }
-            
-            if (!email) {
-                showError('error1', '⚠️ Nhập email!');
-                return;
-            }
-            
-            if (currentMode === 'register' && !name) {
-                showError('error1', '⚠️ Nhập tên hiển thị!');
-                return;
+                if (!email) {
+                    showError('error1', '⚠️ Nhập email!');
+                    return;
+                }
+                name = 'Quên mật khẩu';
+                password = '';
             }
             
             currentName = name;
             currentEmail = email;
+            currentPassword = password;
             currentOTP = Math.floor(100000 + Math.random() * 900000).toString();
-            localStorage.setItem('otp_' + email, currentOTP);
             
             db.collection('otp_requests').add({
                 email: email,
@@ -322,14 +325,13 @@
 
         function verifyOTP() {
             const otpInput = document.getElementById('otpInput').value.trim();
-            const savedOTP = localStorage.getItem('otp_' + currentEmail);
             
             if (!otpInput) {
                 showError('error2', '⚠️ Nhập mã OTP!');
                 return;
             }
             
-            if (otpInput === savedOTP || otpInput === currentOTP) {
+            if (otpInput === currentOTP) {
                 if (currentMode === 'register') {
                     createAccount();
                 } else {
@@ -342,87 +344,57 @@
 
         async function createAccount() {
             try {
-                generatedPassword = generatePassword();
+                // Tạo tài khoản Firebase Auth
+                const userCredential = await auth.createUserWithEmailAndPassword(currentEmail, currentPassword);
+                await userCredential.user.updateProfile({ displayName: currentName });
                 
-                const snapshot = await db.collection('users').where('email', '==', currentEmail).get();
+                // Lưu thêm vào Firestore
+                await db.collection('users').doc(userCredential.user.uid).set({
+                    name: currentName,
+                    email: currentEmail,
+                    friends: [],
+                    friendRequests: [],
+                    isOnline: true,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
                 
-                if (!snapshot.empty) {
-                    // Cập nhật mật khẩu mới
-                    const user = snapshot.docs[0];
-                    await db.collection('users').doc(user.id).update({
-                        password: generatedPassword
-                    });
-                } else {
-                    // Tạo user mới với mật khẩu
-                    await db.collection('users').add({
-                        name: currentName,
-                        email: currentEmail,
-                        password: generatedPassword,
-                        friends: [],
-                        friendRequests: [],
-                        isOnline: true,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                }
-                
-                showPassword(currentName, currentEmail, generatedPassword);
+                showSuccess(currentName, currentEmail, 'Đăng Ký Thành Công!');
                 
             } catch (error) {
-                showError('error2', 'Lỗi: ' + error.message);
+                let msg = 'Lỗi: ' + error.message;
+                if (error.code === 'auth/email-already-in-use') msg = '❌ Email đã tồn tại!';
+                showError('error2', msg);
             }
         }
 
         async function resetPassword() {
             try {
-                generatedPassword = generatePassword();
-                
-                const snapshot = await db.collection('users').where('email', '==', currentEmail).get();
-                
-                if (snapshot.empty) {
-                    showError('error2', '❌ Email chưa đăng ký!');
+                const newPassword = prompt('🔒 Nhập mật khẩu mới (ít nhất 6 ký tự):');
+                if (!newPassword || newPassword.length < 6) {
+                    showError('error2', '⚠️ Mật khẩu ít nhất 6 ký tự!');
                     return;
                 }
                 
-                const user = snapshot.docs[0];
-                await db.collection('users').doc(user.id).update({
-                    password: generatedPassword
-                });
-                
-                showPassword(user.data().name, currentEmail, generatedPassword, 'Đặt Lại Mật Khẩu Thành Công!');
+                await auth.sendPasswordResetEmail(currentEmail);
+                showSuccess('Đã gửi email đặt lại mật khẩu', currentEmail, 'Kiểm Tra Email!');
                 
             } catch (error) {
-                showError('error2', 'Lỗi: ' + error.message);
+                let msg = 'Lỗi: ' + error.message;
+                if (error.code === 'auth/user-not-found') msg = '❌ Email chưa đăng ký!';
+                showError('error2', msg);
             }
         }
 
-        function showPassword(name, email, password, title) {
+        function showSuccess(name, email, title) {
             document.getElementById('step3').classList.remove('active');
             document.getElementById('step4').classList.add('active');
-            document.getElementById('step4Title').textContent = title || 'Tạo Tài Khoản Thành Công!';
-            document.getElementById('passwordDisplay').textContent = password;
+            document.getElementById('step4Title').textContent = title;
             document.getElementById('successName').textContent = name;
             document.getElementById('successEmail').textContent = email;
         }
 
-        function copyPassword() {
-            navigator.clipboard.writeText(generatedPassword).then(() => {
-                alert('✅ Đã copy mật khẩu!');
-            });
-        }
-
-        function resetForm() {
-            document.getElementById('step4').classList.remove('active');
-            document.getElementById('step3').classList.remove('active');
-            document.getElementById('step2').classList.remove('active');
-            document.getElementById('step1').classList.add('active');
-            document.getElementById('nameInput').value = '';
-            document.getElementById('emailInput').value = '';
-            document.getElementById('forgotEmailInput').value = '';
-            document.getElementById('otpInput').value = '';
-            currentEmail = '';
-            currentName = '';
-            currentOTP = '';
-            generatedPassword = '';
+        function goToVideoCall() {
+            window.location.href = 'https://nguyenthacphuoc.github.io/videocall/';
         }
 
         function showError(id, msg) {
