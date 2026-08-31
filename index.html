@@ -12,7 +12,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #667eea, #764ba2); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
         .container { width: 100%; max-width: 450px; }
-        .card { background: white; border-radius: 20px; padding: 35px 25px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); margin-bottom: 15px; }
+        .card { background: white; border-radius: 20px; padding: 35px 25px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); }
         .icon { width: 70px; height: 70px; background: linear-gradient(135deg, #6366f1, #8b5cf6); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 2rem; margin: 0 auto 15px; }
         h1 { text-align: center; font-size: 1.5rem; font-weight: 800; margin-bottom: 5px; color: #1e293b; }
         .subtitle { text-align: center; color: #64748b; margin-bottom: 20px; font-size: 0.85rem; }
@@ -25,57 +25,49 @@
         .btn-primary { background: #6366f1; color: white; }
         .btn-success { background: #10b981; color: white; }
         .btn-danger { background: #ef4444; color: white; }
-        .btn-warning { background: #f59e0b; color: white; }
-        .btn-dark { background: #1e293b; color: white; }
         .error { background: #fee2e2; color: #991b1b; padding: 10px; border-radius: 8px; text-align: center; display: none; margin-top: 10px; }
         .success-box { background: #d1fae5; color: #065f46; padding: 15px; border-radius: 10px; text-align: center; }
         .step { display: none; }
-        .step.active { display: block; }
-        
-        /* Admin Panel */
+        .step.active { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .waiting-box { text-align: center; padding: 20px; }
+        .spinner { width: 50px; height: 50px; border: 4px solid #e2e8f0; border-top: 4px solid #6366f1; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 15px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         #adminPanel { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; overflow-y: auto; }
         .admin-content { background: white; max-width: 600px; margin: 30px auto; padding: 25px; border-radius: 15px; }
         .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .user-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; }
         .otp-request { background: #fef3c7; padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #f59e0b; }
-        
         .admin-code-container { position: fixed; bottom: 15px; left: 15px; z-index: 999; display: flex; gap: 5px; }
         .admin-code-input { padding: 10px; border: 2px solid #e2e8f0; border-radius: 20px; width: 120px; font-size: 13px; }
         .admin-code-btn { padding: 10px 15px; background: #1e293b; color: white; border: none; border-radius: 20px; cursor: pointer; font-size: 13px; font-weight: 600; }
     </style>
 </head>
 <body>
-    <!-- Admin Code -->
     <div class="admin-code-container">
         <input type="password" id="adminCodeInput" placeholder="🔑 Code..." class="admin-code-input">
         <button onclick="activateAdmin()" class="admin-code-btn">Admin</button>
     </div>
 
-    <!-- Admin Panel -->
     <div id="adminPanel">
         <div class="admin-content">
             <div class="admin-header">
                 <h2>👑 Admin Panel</h2>
                 <button class="btn btn-danger" style="width:auto;padding:8px 15px;" onclick="closeAdmin()">✕</button>
             </div>
-            
-            <p style="margin-bottom:15px;">👥 Tổng tài khoản: <strong id="totalUsers">0</strong> | 📨 Chờ OTP: <strong id="pendingOTP">0</strong></p>
-            
+            <p style="margin-bottom:15px;">👥 Tài khoản: <strong id="totalUsers">0</strong> | 📨 Chờ: <strong id="pendingOTP">0</strong></p>
             <h3 style="margin-bottom:10px;">📨 Yêu cầu OTP:</h3>
             <div id="otpRequestsList"></div>
-            
             <h3 style="margin:20px 0 10px;">👥 Tài khoản:</h3>
             <div id="usersList"></div>
         </div>
     </div>
 
     <div class="container">
-        <!-- Bước 1 -->
         <div class="card step active" id="step1">
             <div class="icon">📧</div>
             <h1>Đăng Ký Tài Khoản</h1>
             <p class="subtitle">Nhập email để nhận mã OTP từ Admin</p>
-            
             <div class="form-group">
                 <label>👤 Tên hiển thị:</label>
                 <input type="text" id="nameInput" placeholder="Nguyễn Văn A">
@@ -88,26 +80,31 @@
             <div class="error" id="error1"></div>
         </div>
         
-        <!-- Bước 2 -->
         <div class="card step" id="step2">
+            <div class="waiting-box">
+                <div class="spinner"></div>
+                <h1>⏳ Đang Chờ Admin</h1>
+                <p class="subtitle">Admin sẽ gửi mã OTP cho bạn</p>
+                <p>Email: <strong id="waitingEmail"></strong></p>
+                <p style="color:#10b981;font-weight:600;margin-top:10px;">✅ Khi Admin duyệt, ô nhập OTP sẽ tự hiện!</p>
+            </div>
+        </div>
+        
+        <div class="card step" id="step3">
             <div class="icon">🔐</div>
             <h1>Nhập Mã OTP</h1>
-            <p class="subtitle">Admin sẽ gửi mã OTP cho bạn</p>
-            
+            <p class="subtitle">Admin đã gửi mã OTP</p>
             <div class="form-group">
-                <label>🔑 Mã OTP (6 số):</label>
+                <label>🔑 Mã OTP:</label>
                 <input type="text" id="otpInput" maxlength="6" placeholder="______" style="text-align:center;font-size:22px;letter-spacing:10px;font-weight:700;">
             </div>
             <button class="btn btn-success" onclick="verifyOTP()">✅ Xác Minh & Tạo Tài Khoản</button>
             <div class="error" id="error2"></div>
-            <p style="text-align:center;margin-top:10px;"><a href="#" onclick="backToStep1()" style="color:#6366f1;text-decoration:none;font-weight:600;">🔄 Gửi lại</a></p>
         </div>
         
-        <!-- Bước 3 -->
-        <div class="card step" id="step3">
+        <div class="card step" id="step4">
             <div class="icon">🎉</div>
             <h1>Thành Công!</h1>
-            <p class="subtitle">Tài khoản đã được tạo</p>
             <div class="success-box">
                 <div style="font-size:1.2rem;font-weight:700;" id="successName"></div>
                 <div style="font-size:0.85rem;" id="successEmail"></div>
@@ -117,7 +114,6 @@
     </div>
 
     <script>
-        // Firebase Config
         const firebaseConfig = {
             apiKey: "AIzaSyD0e5Tv4Rhw6SNadrMBvymGjoAGt8h8UuM",
             authDomain: "happy-aa62c.firebaseapp.com",
@@ -135,7 +131,6 @@
         let currentName = '';
         let currentOTP = '';
 
-        // ============ ADMIN ============
         function activateAdmin() {
             const code = document.getElementById('adminCodeInput').value;
             if (code === ADMIN_CODE) {
@@ -145,7 +140,6 @@
                 showAdminPanel();
             } else {
                 alert('❌ Sai code!');
-                document.getElementById('adminCodeInput').value = '';
             }
         }
 
@@ -161,13 +155,10 @@
 
         async function loadAdminData() {
             try {
-                // Load users
                 const usersSnapshot = await db.collection('users').get();
                 document.getElementById('totalUsers').textContent = usersSnapshot.size;
-                
                 const usersList = document.getElementById('usersList');
                 usersList.innerHTML = '';
-                
                 usersSnapshot.docs.forEach(doc => {
                     const user = doc.data();
                     const div = document.createElement('div');
@@ -177,20 +168,18 @@
                             <strong>${user.name || 'N/A'}</strong>
                             <p style="font-size:0.8rem;color:#64748b;">${user.email}</p>
                         </div>
-                        <button class="btn btn-danger" style="width:auto;padding:8px 12px;" onclick="deleteUser('${doc.id}')">🗑️ Xóa</button>
+                        <button class="btn btn-danger" style="width:auto;padding:8px 12px;" onclick="deleteUser('${doc.id}')">🗑️</button>
                     `;
                     usersList.appendChild(div);
                 });
                 
-                // Load OTP requests
                 const otpSnapshot = await db.collection('otp_requests').where('status', '==', 'pending').get();
                 document.getElementById('pendingOTP').textContent = otpSnapshot.size;
-                
                 const otpList = document.getElementById('otpRequestsList');
                 otpList.innerHTML = '';
                 
                 if (otpSnapshot.empty) {
-                    otpList.innerHTML = '<p style="color:#64748b;">Không có yêu cầu nào.</p>';
+                    otpList.innerHTML = '<p style="color:#64748b;">Không có yêu cầu.</p>';
                 }
                 
                 otpSnapshot.docs.forEach(doc => {
@@ -201,82 +190,65 @@
                         <p><strong>📧 ${req.email}</strong></p>
                         <p>👤 ${req.name || 'N/A'}</p>
                         <p style="font-size:1.2rem;font-weight:800;color:#d97706;">🔑 OTP: ${req.otp || 'N/A'}</p>
-                        <div style="display:flex;gap:5px;margin-top:8px;">
-                            <button class="btn btn-success" style="width:auto;padding:8px 12px;" onclick="resolveOTP('${doc.id}')">✅ Đã gửi</button>
-                            <button class="btn btn-danger" style="width:auto;padding:8px 12px;" onclick="deleteOTP('${doc.id}')">🗑️</button>
-                        </div>
+                        <button class="btn btn-success" style="width:auto;padding:8px 12px;margin-top:8px;" onclick="approveOTP('${doc.id}')">✅ Gửi OTP & Hiện Ô Nhập</button>
+                        <button class="btn btn-danger" style="width:auto;padding:8px 12px;" onclick="deleteOTP('${doc.id}')">🗑️</button>
                     `;
                     otpList.appendChild(div);
                 });
             } catch (error) {
                 console.error('Error:', error);
-                alert('Lỗi: ' + error.message);
             }
         }
 
         async function deleteUser(userId) {
-            if (!confirm('Xóa tài khoản này?')) return;
-            try {
-                await db.collection('users').doc(userId).delete();
-                loadAdminData();
-            } catch (error) {
-                alert('Lỗi: ' + error.message);
-            }
+            if (!confirm('Xóa?')) return;
+            await db.collection('users').doc(userId).delete();
+            loadAdminData();
         }
 
-        async function resolveOTP(requestId) {
-            try {
-                await db.collection('otp_requests').doc(requestId).update({ status: 'resolved' });
-                loadAdminData();
-            } catch (error) {
-                alert('Lỗi: ' + error.message);
-            }
+        async function approveOTP(requestId) {
+            await db.collection('otp_requests').doc(requestId).update({ status: 'approved' });
+            loadAdminData();
         }
 
         async function deleteOTP(requestId) {
-            try {
-                await db.collection('otp_requests').doc(requestId).delete();
-                loadAdminData();
-            } catch (error) {
-                alert('Lỗi: ' + error.message);
-            }
+            await db.collection('otp_requests').doc(requestId).delete();
+            loadAdminData();
         }
 
-        // ============ NGƯỜI DÙNG ============
         function requestOTP() {
             const name = document.getElementById('nameInput').value.trim();
             const email = document.getElementById('emailInput').value.trim();
             
             if (!name || !email) {
-                showError('error1', '⚠️ Nhập đầy đủ tên và email!');
+                showError('error1', '⚠️ Nhập đầy đủ!');
                 return;
             }
             
             currentName = name;
             currentEmail = email;
-            
-            // Tạo OTP 6 số
             currentOTP = Math.floor(100000 + Math.random() * 900000).toString();
-            
-            // Lưu OTP vào localStorage
             localStorage.setItem('otp_' + email, currentOTP);
             
-            // Lưu yêu cầu vào Firestore
             db.collection('otp_requests').add({
                 email: email,
                 name: name,
                 otp: currentOTP,
                 status: 'pending',
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            }).then(() => {
-                console.log('✅ Đã gửi yêu cầu OTP');
-            }).catch((error) => {
-                console.error('Error:', error);
-            });
-            
-            // Chuyển bước
-            document.getElementById('step1').classList.remove('active');
-            document.getElementById('step2').classList.add('active');
+            }).then((docRef) => {
+                document.getElementById('step1').classList.remove('active');
+                document.getElementById('step2').classList.add('active');
+                document.getElementById('waitingEmail').textContent = email;
+                
+                // LẮNG NGHE - Khi Admin duyệt sẽ tự hiện ô nhập OTP
+                db.collection('otp_requests').doc(docRef.id).onSnapshot((doc) => {
+                    if (doc.exists && doc.data().status === 'approved') {
+                        document.getElementById('step2').classList.remove('active');
+                        document.getElementById('step3').classList.add('active');
+                    }
+                });
+            }).catch(() => {});
         }
 
         function verifyOTP() {
@@ -291,56 +263,41 @@
             if (otpInput === savedOTP || otpInput === currentOTP) {
                 createAccount();
             } else {
-                showError('error2', '❌ Mã OTP không đúng!');
+                showError('error2', '❌ Mã OTP sai!');
             }
         }
 
         async function createAccount() {
             try {
                 const snapshot = await db.collection('users').where('email', '==', currentEmail).get();
-                
                 if (!snapshot.empty) {
                     const user = snapshot.docs[0];
                     localStorage.setItem('currentUser', JSON.stringify({
-                        uid: user.id,
-                        name: user.data().name,
-                        email: currentEmail
+                        uid: user.id, name: user.data().name, email: currentEmail
                     }));
                 } else {
                     const userRef = await db.collection('users').add({
-                        name: currentName,
-                        email: currentEmail,
-                        friends: [],
-                        friendRequests: [],
-                        isOnline: true,
+                        name: currentName, email: currentEmail,
+                        friends: [], friendRequests: [], isOnline: true,
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
-                    
                     localStorage.setItem('currentUser', JSON.stringify({
-                        uid: userRef.id,
-                        name: currentName,
-                        email: currentEmail
+                        uid: userRef.id, name: currentName, email: currentEmail
                     }));
                 }
-                
-                document.getElementById('step2').classList.remove('active');
-                document.getElementById('step3').classList.add('active');
+                document.getElementById('step3').classList.remove('active');
+                document.getElementById('step4').classList.add('active');
                 document.getElementById('successName').textContent = currentName;
                 document.getElementById('successEmail').textContent = currentEmail;
-                
             } catch (error) {
-                console.error('Error:', error);
                 showError('error2', 'Lỗi: ' + error.message);
             }
         }
 
-        function backToStep1() {
-            document.getElementById('step2').classList.remove('active');
-            document.getElementById('step1').classList.add('active');
-        }
-
         function resetForm() {
+            document.getElementById('step4').classList.remove('active');
             document.getElementById('step3').classList.remove('active');
+            document.getElementById('step2').classList.remove('active');
             document.getElementById('step1').classList.add('active');
             document.getElementById('nameInput').value = '';
             document.getElementById('emailInput').value = '';
@@ -357,20 +314,7 @@
             setTimeout(() => { el.style.display = 'none'; }, 3000);
         }
 
-        // Kiểm tra admin khi load
-        if (localStorage.getItem('isAdmin') === 'true') {
-            isAdmin = true;
-        }
-
-        // Kiểm tra đã đăng nhập
-        const savedUser = localStorage.getItem('currentUser');
-        if (savedUser) {
-            const user = JSON.parse(savedUser);
-            document.getElementById('step1').classList.remove('active');
-            document.getElementById('step3').classList.add('active');
-            document.getElementById('successName').textContent = user.name;
-            document.getElementById('successEmail').textContent = user.email;
-        }
+        if (localStorage.getItem('isAdmin') === 'true') isAdmin = true;
     </script>
 </body>
 </html>
