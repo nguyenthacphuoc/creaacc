@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng Ký - Xác Minh Email</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔐</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --dark: #0f172a;
+            --gray: #64748b;
+            --light: #f1f5f9;
+            --white: #ffffff;
+            --border: #e2e8f0;
+            --shadow: 0 1px 3px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 40px rgba(0,0,0,0.15);
+            --radius: 16px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 450px;
+        }
+
+        .card {
+            background: var(--white);
+            border-radius: 24px;
+            padding: 40px 30px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.3);
+            animation: slideUp 0.5s ease;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2.5rem;
+            margin: 0 auto 20px;
+            box-shadow: 0 10px 30px rgba(99,102,241,0.4);
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--dark);
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--gray);
+            margin-bottom: 30px;
+            font-size: 0.95rem;
+        }
+
+        .step { display: none; }
+        .step.active { display: block; animation: fadeIn 0.4s ease; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .form-group { margin-bottom: 20px; }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--dark);
+        }
+
+        input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 16px;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s;
+            background: var(--light);
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: var(--white);
+            box-shadow: 0 0 0 4px rgba(99,102,241,0.1);
+        }
+
+        .otp-input {
+            text-align: center;
+            font-size: 28px;
+            letter-spacing: 15px;
+            font-weight: 800;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 12px;
+            border-radius: 10px;
+            text-align: center;
+            display: none;
+            margin-top: 12px;
+            font-weight: 500;
+            animation: shake 0.5s;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .success-box {
+            background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+            color: #065f46;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            font-weight: 600;
+            margin-top: 15px;
+        }
+
+        .timer {
+            text-align: center;
+            color: var(--gray);
+            margin-top: 12px;
+            font-size: 0.9rem;
+        }
+
+        .link {
+            color: var(--primary);
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .link:hover { text-decoration: underline; }
+
+        /* Admin Panel */
+        #adminPanel {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            overflow-y: auto;
+            backdrop-filter: blur(5px);
+        }
+
+        .admin-content {
+            background: var(--white);
+            max-width: 650px;
+            margin: 30px auto;
+            padding: 30px;
+            border-radius: 24px;
+            animation: slideUp 0.4s ease;
+        }
+
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .admin-header h2 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--dark);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: var(--light);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--gray);
+            font-weight: 600;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: var(--dark);
+        }
+
+        .user-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: var(--light);
+            border-radius: 12px;
+            margin-bottom: 10px;
+            transition: all 0.2s;
+        }
+
+        .user-item:hover {
+            background: #e2e8f0;
+            transform: translateX(5px);
+        }
+
+        .otp-request {
+            background: #fef3c7;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            border-left: 4px solid var(--warning);
+        }
+
+        /* Admin Code Input */
+        .admin-code-container {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 999;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .admin-code-input {
+            padding: 12px 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 25px;
+            width: 140px;
+            font-size: 14px;
+            background: rgba(255,255,255,0.9);
+            backdrop-filter: blur(10px);
+        }
+
+        .admin-code-btn {
+            padding: 12px 18px;
+            background: var(--dark);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .admin-code-btn:hover {
+            background: var(--primary);
+            transform: scale(1.05);
+        }
+
+        @media (max-width: 480px) {
+            .card { padding: 30px 20px; }
+            .stats-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Admin Code Input -->
+    <div class="admin-code-container">
+        <input type="password" id="adminCodeInput" placeholder="🔑 Code..." class="admin-code-input">
+        <button onclick="activateAdmin()" class="admin-code-btn">Admin</button>
+    </div>
+
+    <!-- Admin Panel -->
+    <div id="adminPanel">
+        <div class="admin-content">
+            <div class="admin-header">
+                <h2>👑 Admin Panel</h2>
+                <button class="btn btn-danger" style="width:auto;padding:8px 15px;" onclick="closeAdmin()">✕ Đóng</button>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalUsers">0</div>
+                    <div class="stat-label">👥 Tài khoản</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="pendingOTP">0</div>
+                    <div class="stat-label">📨 Chờ OTP</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="onlineUsers">0</div>
+                    <div class="stat-label">🟢 Online</div>
+                </div>
+            </div>
+            
+            <h3 class="section-title">📨 Yêu cầu OTP đang chờ</h3>
+            <div id="otpRequestsList"></div>
+            
+            <h3 class="section-title" style="margin-top:25px;">👥 Danh sách tài khoản</h3>
+            <div id="usersList"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Bước 1 -->
+        <div class="card step active" id="step1">
+            <div class="icon">📧</div>
+            <h1>Đăng Ký Tài Khoản</h1>
+            <p class="subtitle">Nhập email để nhận mã OTP từ Admin</p>
+            
+            <div class="form-group">
+                <label>👤 Tên hiển thị</label>
+                <input type="text" id="nameInput" placeholder="Nguyễn Văn A">
+            </div>
+            <div class="form-group">
+                <label>📧 Email</label>
+                <input type="email" id="emailInput" placeholder="example@gmail.com">
+            </div>
+            <button class="btn btn-primary" onclick="requestOTP()">📨 Gửi Yêu Cầu OTP</button>
+            <div class="error" id="error1"></div>
+        </div>
+        
+        <!-- Bước 2 -->
+        <div class="card step" id="step2">
+            <div class="icon">🔐</div>
+            <h1>Nhập Mã OTP</h1>
+            <p class="subtitle">Admin sẽ gửi mã OTP cho bạn</p>
+            
+            <div class="form-group">
+                <label>🔑 Mã OTP (6 số)</label>
+                <input type="text" id="otpInput" class="otp-input" maxlength="6" placeholder="______">
+            </div>
+            <button class="btn btn-success" onclick="verifyOTP()">✅ Xác Minh & Tạo Tài Khoản</button>
+            <div class="timer" id="timer"></div>
+            <div class="error" id="error2"></div>
+            <p style="text-align:center;margin-top:15px;">
+                <a class="link" onclick="backToStep1()">🔄 Gửi lại yêu cầu</a>
+            </p>
+        </div>
+        
+        <!-- Bước 3 -->
+        <div class="card step" id="step3">
+            <div class="icon">🎉</div>
+            <h1>Thành Công!</h1>
+            <p class="subtitle">Tài khoản của bạn đã được tạo</p>
+            
+            <div class="success-box">
+                <div style="font-size:2rem;margin-bottom:10px;">✅</div>
+                <div style="font-size:1.2rem;" id="successName"></div>
+                <div style="color:#065f46;font-size:0.9rem;" id="successEmail"></div>
+            </div>
+            
+            <button class="btn btn-primary" onclick="goToVideoCall()" style="margin-top:20px;">📞 Vào VideoCall</button>
+            <button class="btn btn-warning" onclick="resetForm()" style="margin-top:10px;">🔄 Đăng Ký Khác</button>
+        </div>
+    </div>
+
+    <script src="firebase-config.js"></script>
+    <script>
+        let isAdmin = false;
+        const ADMIN_CODE = 'admin@@@';
+        let currentEmail = '';
+        let currentName = '';
+        let timerInterval = null;
+
+        // ============ ADMIN ============
+        function activateAdmin() {
+            const code = document.getElementById('adminCodeInput').value;
+            if (code === ADMIN_CODE) {
+                isAdmin = true;
+                localStorage.setItem('isAdmin', 'true');
+                document.getElementById('adminCodeInput').value = '';
+                showAdminPanel();
+            } else {
+                alert('❌ Sai code!');
+                document.getElementById('adminCodeInput').value = '';
+            }
+        }
+
+        function showAdminPanel() {
+            if (!isAdmin) { alert('Không có quyền!'); return; }
+            document.getElementById('adminPanel').style.display = 'block';
+            loadAdminData();
+        }
+
+        function closeAdmin() {
+            document.getElementById('adminPanel').style.display = 'none';
+        }
+
+        async function loadAdminData() {
+            // Load users
+            const usersSnapshot = await db.collection('users').get();
+            document.getElementById('totalUsers').textContent = usersSnapshot.size;
+            
+            let onlineCount = 0;
+            const usersList = document.getElementById('usersList');
+            usersList.innerHTML = '';
+            
+            usersSnapshot.docs.forEach(doc => {
+                const user = doc.data();
+                if (user.isOnline) onlineCount++;
+                
+                const div = document.createElement('div');
+                div.className = 'user-item';
+                div.innerHTML = `
+                    <div>
+                        <strong>${user.name || 'N/A'}</strong>
+                        <p style="font-size:0.8rem;color:#64748b;">${user.email}</p>
+                        <p style="font-size:0.75rem;color:${user.isOnline ? '#10b981' : '#64748b'};">${user.isOnline ? '🟢 Online' : '⚫ Offline'}</p>
+                    </div>
+                    <button class="btn btn-danger" style="width:auto;padding:8px 12px;" onclick="deleteUser('${doc.id}')">🗑️</button>
+                `;
+                usersList.appendChild(div);
+            });
+            
+            document.getElementById('onlineUsers').textContent = onlineCount;
+            
+            // Load OTP requests
+            const otpSnapshot = await db.collection('otp_requests').where('status', '==', 'pending').get();
+            document.getElementById('pendingOTP').textContent = otpSnapshot.size;
+            
+            const otpList = document.getElementById('otpRequestsList');
+            otpList.innerHTML = '';
+            
+            if (otpSnapshot.empty) {
+                otpList.innerHTML = '<p style="color:#64748b;text-align:center;padding:20px;">Không có yêu cầu nào.</p>';
+            }
+            
+            otpSnapshot.docs.forEach(doc => {
+                const req = doc.data();
+                const otp = doc.id.substring(0, 6);
+                const div = document.createElement('div');
+                div.className = 'otp-request';
+                div.innerHTML = `
+                    <p><strong>📧 ${req.email}</strong></p>
+                    <p>👤 ${req.name || 'N/A'}</p>
+                    <p style="font-size:1.2rem;font-weight:800;color:#d97706;">🔑 ${otp}</p>
+                    <button class="btn btn-success" style="width:auto;padding:8px 15px;margin-top:8px;" onclick="resolveOTP('${doc.id}')">✅ Đã gửi OTP</button>
+                `;
+                otpList.appendChild(div);
+            });
+        }
+
+        async function deleteUser(userId) {
+            if (!confirm('🗑️ Xóa tài khoản này?')) return;
+            await db.collection('users').doc(userId).delete();
+            loadAdminData();
+        }
+
+        async function resolveOTP(requestId) {
+            await db.collection('otp_requests').doc(requestId).update({ status: 'resolved' });
+            loadAdminData();
+        }
+
+        // ============ NGƯỜI DÙNG ============
+        function requestOTP() {
+            const email = document.getElementById('emailInput').value.trim();
+            const name = document.getElementById('nameInput').value.trim();
+            
+            if (!email || !name) {
+                showError('error1', '⚠️ Nhập đầy đủ tên và email!');
+                return;
+            }
+            
+            currentEmail = email;
+            currentName = name;
+            
+            // Tạo OTP
+            const otp = Math.floor(100000 + Math.random() * 900000).toString();
+            localStorage.setItem('otp_' + email, otp);
+            
+            // Lưu yêu cầu
+            db.collection('otp_requests').add({
+                email: email,
+                name: name,
+                status: 'pending',
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            }).catch(() => {});
+            
+            // Chuyển bước
+            document.getElementById('step1').classList.remove('active');
+            document.getElementById('step2').classList.add('active');
+            startTimer(120);
+        }
+
+        function verifyOTP() {
+            const otpInput = document.getElementById('otpInput').value.trim();
+            const savedOTP = localStorage.getItem('otp_' + currentEmail);
+            
+            if (!otpInput) {
+                showError('error2', '⚠️ Nhập mã OTP!');
+                return;
+            }
+            
+            if (otpInput === savedOTP) {
+                createAccount();
+            } else {
+                showError('error2', '❌ Mã OTP không đúng!');
+            }
+        }
+
+        async function createAccount() {
+            try {
+                const snapshot = await db.collection('users').where('email', '==', currentEmail).get();
+                
+                if (!snapshot.empty) {
+                    const user = snapshot.docs[0];
+                    localStorage.setItem('currentUser', JSON.stringify({
+                        uid: user.id,
+                        name: user.data().name,
+                        email: currentEmail
+                    }));
+                } else {
+                    const userRef = await db.collection('users').add({
+                        name: currentName,
+                        email: currentEmail,
+                        friends: [],
+                        friendRequests: [],
+                        isOnline: true,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    
+                    localStorage.setItem('currentUser', JSON.stringify({
+                        uid: userRef.id,
+                        name: currentName,
+                        email: currentEmail
+                    }));
+                }
+                
+                stopTimer();
+                document.getElementById('step2').classList.remove('active');
+                document.getElementById('step3').classList.add('active');
+                document.getElementById('successName').textContent = currentName;
+                document.getElementById('successEmail').textContent = currentEmail;
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showError('error2', 'Lỗi khi tạo tài khoản!');
+            }
+        }
+
+        function backToStep1() {
+            stopTimer();
+            document.getElementById('step2').classList.remove('active');
+            document.getElementById('step1').classList.add('active');
+        }
+
+        function goToVideoCall() {
+            window.location.href = 'https://nguyenthacphuoc.github.io/videocall/';
+        }
+
+        function resetForm() {
+            document.getElementById('step3').classList.remove('active');
+            document.getElementById('step1').classList.add('active');
+            document.getElementById('nameInput').value = '';
+            document.getElementById('emailInput').value = '';
+            document.getElementById('otpInput').value = '';
+            currentEmail = '';
+            currentName = '';
+        }
+
+        function startTimer(seconds) {
+            stopTimer();
+            let timeLeft = seconds;
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer').textContent = `⏰ Hết hạn sau: ${timeLeft}s`;
+                if (timeLeft <= 0) {
+                    stopTimer();
+                    document.getElementById('timer').textContent = '❌ Mã hết hạn!';
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+        }
+
+        function showError(id, msg) {
+            const el = document.getElementById(id);
+            el.textContent = msg;
+            el.style.display = 'block';
+            setTimeout(() => { el.style.display = 'none'; }, 3000);
+        }
+
+        // Init
+        const savedAdmin = localStorage.getItem('isAdmin');
+        if (savedAdmin === 'true') isAdmin = true;
+
+        const savedUser = localStorage.getItem('currentUser');
+        if (savedUser) {
+            const user = JSON.parse(savedUser);
+            document.getElementById('step1').classList.remove('active');
+            document.getElementById('step3').classList.add('active');
+            document.getElementById('successName').textContent = user.name;
+            document.getElementById('successEmail').textContent = user.email;
+        }
+    </script>
+</body>
+</html>
