@@ -22,6 +22,7 @@
         input { width: 100%; padding: 12px 15px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 15px; }
         input:focus { outline: none; border-color: #6366f1; }
         .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; margin-bottom: 8px; }
+        .btn:hover { transform: translateY(-2px); }
         .btn-primary { background: #6366f1; color: white; }
         .btn-success { background: #10b981; color: white; }
         .btn-danger { background: #ef4444; color: white; }
@@ -67,7 +68,6 @@
     </div>
 
     <div class="container">
-        <!-- Bước 1 -->
         <div class="card step active" id="step1">
             <div class="icon">📧</div>
             <h1>Tạo Tài Khoản</h1>
@@ -104,7 +104,6 @@
             <div class="error" id="error1"></div>
         </div>
         
-        <!-- Bước 2 -->
         <div class="card step" id="step2">
             <div class="waiting-box">
                 <div class="spinner"></div>
@@ -115,7 +114,6 @@
             </div>
         </div>
         
-        <!-- Bước 3 -->
         <div class="card step" id="step3">
             <div class="icon">🔐</div>
             <h1>Nhập Mã OTP</h1>
@@ -128,7 +126,6 @@
             <div class="error" id="error2"></div>
         </div>
         
-        <!-- Bước 4 -->
         <div class="card step" id="step4">
             <div class="icon">🎉</div>
             <h1 id="step4Title">Đăng Ký Thành Công!</h1>
@@ -212,7 +209,7 @@
                             <strong>${user.name || 'N/A'}</strong>
                             <p style="font-size:0.8rem;color:#64748b;">${user.email}</p>
                         </div>
-                        <button class="btn btn-danger" style="width:auto;padding:8px 12px;" onclick="deleteUser('${doc.id}')">🗑️</button>
+                        <button class="btn btn-danger" style="width:auto;padding:8px 12px;" onclick="deleteUser('${doc.id}')">🗑️ Xóa</button>
                     `;
                     usersList.appendChild(div);
                 });
@@ -245,14 +242,12 @@
         }
 
         async function deleteUser(userId) {
-            if (!confirm('Xóa?')) return;
+            if (!confirm('Xóa tài khoản này?')) return;
             try {
+                // Chỉ xóa trong Firestore
                 await db.collection('users').doc(userId).delete();
-                // Xóa cả Firebase Auth
-                const userDoc = await db.collection('users').doc(userId).get();
-                const authUser = await auth.getUser(userId);
-                if (authUser) await authUser.delete();
                 loadAdminData();
+                alert('✅ Đã xóa!');
             } catch (error) {
                 alert('Lỗi: ' + error.message);
             }
@@ -369,15 +364,9 @@
 
         async function resetPassword() {
             try {
-                const newPassword = prompt('🔒 Nhập mật khẩu mới (ít nhất 6 ký tự):');
-                if (!newPassword || newPassword.length < 6) {
-                    showError('error2', '⚠️ Mật khẩu ít nhất 6 ký tự!');
-                    return;
-                }
-                
+                // Gửi email đặt lại mật khẩu từ Firebase
                 await auth.sendPasswordResetEmail(currentEmail);
-                showSuccess('Đã gửi email đặt lại mật khẩu', currentEmail, 'Kiểm Tra Email!');
-                
+                showSuccess('📧 Đã gửi email đặt lại mật khẩu!', currentEmail, 'Kiểm Tra Email!');
             } catch (error) {
                 let msg = 'Lỗi: ' + error.message;
                 if (error.code === 'auth/user-not-found') msg = '❌ Email chưa đăng ký!';
