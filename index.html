@@ -247,7 +247,7 @@
                 // Chỉ xóa trong Firestore
                 await db.collection('users').doc(userId).delete();
                 loadAdminData();
-                alert('✅ Đã xóa!');
+                alert('✅ Đã xóa Nhưng Nhớ Vào https://console.firebase.google.com/u/0/project/happy-aa62c/authentication/users xóa nhé!');
             } catch (error) {
                 alert('Lỗi: ' + error.message);
             }
